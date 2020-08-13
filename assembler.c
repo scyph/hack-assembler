@@ -1,15 +1,14 @@
 #include <stdio.h>
 
-
 /** TODO: 
-		~ command line arg
-			$ ./assembler mult.asm -o mult
+	    ~ command line arg
+	        $ ./assembler mult.asm -o mult
 		
 		*/
 
 void strip(FILE *program, FILE *temp, char c);
 
-int main()
+int main(/** int argc, char *argv[] */)
 {
 	FILE *program;
 	FILE *temp;
