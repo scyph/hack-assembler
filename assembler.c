@@ -1,20 +1,28 @@
 #include <stdio.h>
 
 /** TODO: 
-	    ~ command line arg
+	    ~ branch out command line args
 	        $ ./assembler mult.asm -o mult
-		
 		*/
 
 void strip(FILE *program, FILE *temp, char c);
 
-int main(/** int argc, char *argv[] */)
+int main(int argc, char *argv[])
 {
 	FILE *program;
 	FILE *temp;
 	char c;
 
-	program = fopen("mult.asm", "r");
+	switch(argc)
+	{
+		case 2:
+			program = fopen(argv[1], "r");
+			break;
+		default:
+			printf("\nUsage: ./assembler FILE\n\n");
+			return 1;
+	}
+
 	temp   = fopen("temp.asm", "w");
 
 	if (program == NULL)
