@@ -1,45 +1,63 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "util.h"
 
 /** TODO: 
 	    ~ branch out command line args
-	        $ ./assembler mult.asm -o mult
-		*/
+	        $ ./assembler -help
+	        OVERVIEW: hack assembler
 
-void strip(FILE *program, FILE *temp, char c);
+	        USAGE: ./assembler file [options]...
+
+	        OPTIONS:
+	        	-o <file>  Write output to <file>
+	        	...
+*/
+
+char c;
+
+void strip(FILE *program, FILE *temp);
+void assemble(FILE *temp, FILE *bin);
 
 int main(int argc, char *argv[])
 {
 	FILE *program;
 	FILE *temp;
-	char c;
-
+	FILE *bin;
+	
 	switch(argc)
 	{
+		/** if given file arg, open file */
 		case 2:
 			program = fopen(argv[1], "r");
 			break;
 		default:
-			printf("\nUsage: ./assembler FILE\n\n");
+			printf("\nUSAGE: ./assembler FILE\n\n");
 			return 1;
 	}
 
-	temp   = fopen("temp.asm", "w");
-
 	if (program == NULL)
 	{
-		printf("error..");
-		return 1;
+		printf("\nerror: %s could not be read/found..\n\n", argv[1]);
+		return 2;
 	}
 
-	strip(program, temp, c);
+	temp = fopen("temp.asm", "w+");
 
+	strip(program, temp);
+	rewind(temp);
+	bin = fopen("a.out", "w");
+	assemble(temp, bin);
+	
 	fclose(program);
 	fclose(temp);
+	fclose(bin);
 
 	return 0;
 }
 
-void strip(FILE *program, FILE *temp, char c)
+void strip(FILE *program, FILE *temp)
 {
 	int slash = 0;
 	int chars = 0;
@@ -82,7 +100,7 @@ void strip(FILE *program, FILE *temp, char c)
 			continue;
 		}
 
-		/** inc if c is a character.
+		/** increment if c is a character.
 			  - useful for recognizing and ignoring
 			  	inline comments  */
 		if (c > 32 && c < 127)
@@ -112,3 +130,55 @@ void strip(FILE *program, FILE *temp, char c)
 	}
 }
 
+void assemble(FILE *temp, FILE *bin)
+{
+	int i = 0;
+	int value[10] = {0,0,0,0,0,0,0,0,0,0};
+	int actual;
+	char *bin_r;
+	char vflag = 0;
+	while ((c=fgetc(temp)) != EOF)
+	{
+		if (vflag)
+		{
+			if (c == '\n')
+			{
+				switch(i)
+				{
+					case 1:
+						bin_r = to_binary(value[0]);
+						break;
+					case 2:
+						actual = (value[0] * 10) + value[1];
+						bin_r = to_binary(actual);
+						break;
+					case 3:
+						actual = (value[0] * 100) + (value[1] * 10) + value[2];
+						bin_r = to_binary(actual);
+						break;
+					default:
+						printf("Idk wtf happened tbh..\n");
+				}
+
+				fputs(bin_r, bin);
+				i = 0;
+				for (int k = 0; k < 10; k++)
+				{
+					value[k] = 0;
+				}
+				free(bin_r);
+				fputc('\n', bin);
+				vflag = 0;
+				continue;
+			}
+			value[i] = c - '0';
+			// printf("%i", value[i]);
+			i++;
+		}
+		if (c == '@')
+		{
+			fputc('0', bin);
+			vflag = 1;
+		}
+	}
+}
