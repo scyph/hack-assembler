@@ -17,7 +17,8 @@
 
 char c;
 
-void strip(FILE *program, FILE *temp);
+
+void parse(FILE *program, FILE *temp);
 void assemble(FILE *temp, FILE *bin);
 
 int main(int argc, char *argv[])
@@ -45,9 +46,9 @@ int main(int argc, char *argv[])
 
 	temp = fopen("temp.asm", "w+");
 
-	strip(program, temp);
+	parse(program, temp);
 	rewind(temp);
-	bin = fopen("a.out", "w");
+	bin = fopen("out.hack", "w");
 	assemble(temp, bin);
 	
 	fclose(program);
@@ -57,15 +58,14 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void strip(FILE *program, FILE *temp)
+void parse(FILE *program, FILE *temp)
 {
 	int slash = 0;
 	int chars = 0;
-	while (1)
+	/** while we're not at the end of the file*/ 
+	while ((c=fgetc(program)) != EOF)
 	{
-		c = fgetc(program);
-
-		/** strip comments */
+		/** ignore comment */
 		if (slash == 2)
 		{
 			/** (inline comment)if end of current 
@@ -88,14 +88,15 @@ void strip(FILE *program, FILE *temp)
 			/** else ignore current character */
 			continue;
 		}
-		if (c == '/')
+
+		else if (c == '/')
 		{
 			slash++;
 			continue;
 		}
 
-		/** strip whitespace */
-		if (c == ' ')
+		/** ignore whitespace */
+		else if (c == ' ')
 		{
 			continue;
 		}
@@ -103,13 +104,13 @@ void strip(FILE *program, FILE *temp)
 		/** increment if c is a character.
 			  - useful for recognizing and ignoring
 			  	inline comments  */
-		if (c > 32 && c < 127)
+		else if (c > 32 && c < 127)
 		{
 			chars++;
 		}
 
-		/** strip lonely newlines */
-		if (c == '\n')
+		/** ignore lonely newlines */
+		else if (c == '\n')
 		{
 			/** if newline is lonely move 
 				to next line */
@@ -119,12 +120,6 @@ void strip(FILE *program, FILE *temp)
 			}
 			chars = 0;
 		}
-
-		/** if end of file exit out of loop */
-		if (feof(program))
-		{
-			break;
-		}
 		/** write relevant characters into temp file */ 
 		fprintf(temp, "%c", c);
 	}
@@ -133,10 +128,11 @@ void strip(FILE *program, FILE *temp)
 void assemble(FILE *temp, FILE *bin)
 {
 	int i = 0;
-	int value[10] = {0,0,0,0,0,0,0,0,0,0};
+	char value[10] = {0,0,0,0,0,0,0,0,0,0};
 	int actual;
 	char *bin_r;
 	char vflag = 0;
+
 	while ((c=fgetc(temp)) != EOF)
 	{
 		if (vflag)
@@ -157,9 +153,9 @@ void assemble(FILE *temp, FILE *bin)
 						bin_r = to_binary(actual);
 						break;
 					default:
+						// TODO maybe go to variable path
 						printf("Idk wtf happened tbh..\n");
 				}
-
 				fputs(bin_r, bin);
 				i = 0;
 				for (int k = 0; k < 10; k++)
@@ -172,7 +168,7 @@ void assemble(FILE *temp, FILE *bin)
 				continue;
 			}
 			value[i] = c - '0';
-			// printf("%i", value[i]);
+
 			i++;
 		}
 		if (c == '@')
